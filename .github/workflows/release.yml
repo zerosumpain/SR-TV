@@ -27,7 +27,11 @@ jobs:
           java-version: '17'
           cache: gradle
 
-      - uses: android-actions/setup-android@v3
+      - name: Android SDK packages (runner has the SDK preinstalled)
+        run: |
+          SDKM="$(ls -d "$ANDROID_HOME"/cmdline-tools/*/bin/sdkmanager | sort -V | tail -1)"
+          yes | "$SDKM" --licenses > /dev/null || true
+          "$SDKM" "platforms;android-35" "build-tools;35.0.0" > /dev/null
 
       - name: Decode signing keystore
         env:
