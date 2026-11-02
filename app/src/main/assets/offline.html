@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>sr. tv — offline</title>
+<style>
+  :root { --ink: #14161a; --cream: #f3efe6; --orange: #e8743b; --muted: rgba(243, 239, 230, 0.6); }
+  html, body { margin: 0; height: 100%; background: var(--ink); color: var(--cream);
+    font-family: "DM Sans", "Roboto", sans-serif; }
+  main { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 1.5rem; text-align: center; padding: 0 8vw; box-sizing: border-box; }
+  .mark { font-family: "DM Mono", monospace; font-size: 4rem; font-weight: 500; letter-spacing: -0.02em; }
+  .mark span { color: var(--orange); }
+  h1 { font-size: 2rem; font-weight: 600; margin: 0; }
+  p { color: var(--muted); font-size: 1.25rem; margin: 0; }
+  button { font: inherit; font-size: 1.4rem; font-weight: 600; color: var(--ink); background: var(--cream);
+    border: 0; border-radius: 999px; padding: 0.8rem 2.6rem; margin-top: 1rem; cursor: pointer;
+    outline: none; transition: transform 120ms ease, box-shadow 120ms ease; }
+  button:focus { background: var(--orange); color: var(--ink); transform: scale(1.06);
+    box-shadow: 0 0 0 4px var(--ink), 0 0 0 8px var(--orange); }
+</style>
+</head>
+<body>
+<main>
+  <div class="mark">sr<span>.</span></div>
+  <h1>Can't reach strangeramblings.com</h1>
+  <p>Check the TV's network, then try again.</p>
+  <button id="retry" autofocus>Retry</button>
+</main>
+<script>
+  var START = "https://strangeramblings.com/games/tv";
+  var btn = document.getElementById("retry");
+  function retry() {
+    if (window.SRTV && window.SRTV.retry) { window.SRTV.retry(); } else { location.replace(START); }
+  }
+  btn.addEventListener("click", retry);
+  window.addEventListener("load", function () { btn.focus(); });
+  btn.focus();
+</script>
+</body>
+</html>

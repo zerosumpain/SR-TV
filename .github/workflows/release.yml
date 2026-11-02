@@ -1,0 +1,67 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      VERSION_NAME: 1.0.${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Decode signing keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ]; then echo "::error::KEYSTORE_B64 secret is missing"; exit 1; fi
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/sr-tv-release.jks"
+          echo "KEYSTORE_PATH=$RUNNER_TEMP/sr-tv-release.jks" >> "$GITHUB_ENV"
+
+      - name: Build signed release APK
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleRelease
+          cp app/build/outputs/apk/release/app-release.apk sr-tv.apk
+          rm -f "$KEYSTORE_PATH"
+
+      - name: Check the APK
+        run: |
+          BT="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
+          "$BT/apksigner" verify --print-certs sr-tv.apk | grep -E "Signer #1 certificate (DN|SHA-256)"
+          "$BT/aapt2" dump badging sr-tv.apk | tee badging.txt | grep -E "^package:|leanback-launchable-activity|^application:"
+          grep -q "leanback-launchable-activity" badging.txt
+          grep -q "versionCode='${{ github.run_number }}'" badging.txt
+          grep -q "banner=" badging.txt
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v$VERSION_NAME" sr-tv.apk \
+            --title "sr. tv $VERSION_NAME" \
+            --notes "sr. tv $VERSION_NAME (versionCode ${{ github.run_number }}) built from ${GITHUB_SHA::7}. Install on the TV with Downloader: strangeramblings.com/tv/get" \
+            --latest
