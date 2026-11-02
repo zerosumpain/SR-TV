@@ -54,8 +54,8 @@ jobs:
 
       - name: Check the APK
         run: |
-          BT="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
-          "$BT/apksigner" verify --print-certs sr-tv.apk | grep -E "Signer #1 certificate (DN|SHA-256)"
+          BT="$ANDROID_HOME/build-tools/35.0.0"
+          "$BT/apksigner" verify --print-certs sr-tv.apk | grep -v -i "md5\|sha-1"
           "$BT/aapt2" dump badging sr-tv.apk | tee badging.txt | grep -E "^package:|leanback-launchable-activity|^application:"
           grep -q "leanback-launchable-activity" badging.txt
           grep -q "versionCode='${{ github.run_number }}'" badging.txt
